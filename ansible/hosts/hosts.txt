@@ -1,10 +1,20 @@
-# Hosts file
+# Database module
 [database]
+104.198.65.223
+34.69.131.100
+35.239.5.246
 
 [collector]
+#34.68.248.118
 
 [corrector]
+#35.222.17.150
 
 [analyzer]
+#35.193.150.218
 
 [reports]
+#35.184.144.115
+
+[anonymizer]
+35.223.240.95

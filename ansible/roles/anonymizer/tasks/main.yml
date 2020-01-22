@@ -1,0 +1,73 @@
+---
+- import_tasks: ubuntu.yml
+  when: ansible_os_family == "Debian"
+
+- name: Install the necessary packages
+  pip:
+    name: [
+      'psycopg2',
+      'pymongo',
+      'python-dateutil',
+      'pyyaml'
+    ]
+    executable: pip3
+
+- name: Ensure group "{{ module_user }}" exists
+  group:
+    name: "{{ module_user }}"
+    state: present
+
+- name: Create the system user {{ module_user }}
+  user:
+    name: "{{ module_user }}"
+    group: "{{ module_user }}"
+    home: "/opt/{{ module_user }}"
+    create_home: yes
+    move_home: yes
+    system: yes
+    shell: /bin/bash
+
+- name: Append the opmon group to {{ module_user }} and www-data
+  user:
+    name: "{{ module_user }}"
+    groups: "opmon"
+    append: yes
+
+# --- Module specific code ---
+- name: Copy the code to the install folder and fix the file permissions
+  copy:
+    src: "{{SOURCE}}/{{module_name}}/{{ module_user }}"
+    dest: "{{APPDIR}}/{{INSTANCE}}/{{module_name}}"
+    group: opmon
+    remote_src: yes
+    mode: preserve
+
+- name: Update the config file
+  template:
+    src: "roles/{{ module_user }}/templates/settings.py.j2"
+    dest: "{{APPDIR}}/{{INSTANCE}}/{{module_name}}/{{ module_user }}/instance_configurations/settings_{{INSTANCE}}.py"
+
+- name: Create the symlink
+  file:
+    src: "{{APPDIR}}/{{INSTANCE}}/{{module_name}}/{{ module_user }}/instance_configurations/settings_{{INSTANCE}}.py"
+    dest: "{{APPDIR}}/{{INSTANCE}}/{{module_name}}/{{ module_user }}/settings.py"
+    group: opmon
+    state: link
+    follow: yes
+
+- name: Adjust the {{ module_user }} permissions
+  file:
+    path: "{{APPDIR}}/{{INSTANCE}}/{{module_name}}/{{ module_user }}"
+    recurse: yes
+    owner: "{{ module_user }}"
+    group: "{{ module_user }}"
+    state: directory
+    mode: "0500"
+
+- name: Ensure the cron job runs.
+  cron:
+    name: "Anonymizer"
+    user: "{{ module_user }}"
+    minute: "*/5"
+    hour: "*"
+    job: "{{APPDIR}}/{{INSTANCE}}/{{module_name}}/{{ module_user }}/cron_anonymizer_sample.sh"

@@ -113,7 +113,6 @@
 - name: Fix executing permissions on .sh files
   shell: "find  {{APPDIR}}/{{INSTANCE}}/{{module_name}}/ -name '*.sh' -type f | sudo xargs chmod u+x"
 
-
 - name: Enable the cron job
   cron:
     name: "Reports"
